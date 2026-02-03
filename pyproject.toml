@@ -1,0 +1,11 @@
+[project]
+name = "kalorien-tracker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask-restful>=0.3.10",
+    "pytest>=9.0.2",
+    "sqlalchemy>=2.0.46",
+]
