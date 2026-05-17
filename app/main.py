@@ -1,3 +1,5 @@
+import math
+
 # KALORIENBEDARF-BERECHNUNG (HARRIS-BENEDICT REVIDIERT 1984)
 
 # 1. GRUNDUMSATZ (BMR)
@@ -16,6 +18,7 @@
 #    1,9   = Extrem aktiv (sehr intensive Arbeit/Training)
 
 # 3. KALORIENZIEL
+#    Das kaloriendefizit darf nicht mehr als 15% des Gesamtumsatzes betragen, um gesund abzunehmen.
 #    Tägliches Defizit/zunahme = (kg pro Woche × 7000) ÷ 7
 #    
 #    7000 = ca. Kaloriengehalt von 1 kg
@@ -38,8 +41,12 @@ def berechne_bmr(gewicht, groesse, alter, geschlecht):
     if geschlecht == "m":
 
         bmr = 66.5 + (13.67 * gewicht) + (5.003 * groesse) - (6.755 * alter)
-    else:
+    
+    elif geschlecht == "w":
         bmr = 655 + (9.563 * gewicht) + (1.850 * groesse) - (4.676 * alter)
+
+    else:
+        print("Ungültige Eingabe für Geschlecht. Bitte 'm' für männlich oder 'w' für weiblich eingeben.")
 
     return bmr
 
@@ -90,21 +97,34 @@ def berechne_gsu(bmr, pal_faktor):
 
 print()
 
+
 gsu = berechne_gsu(bmr, pal_faktor)
 print(f"Dein Gesamtumsatz (GSU) beträgt: {gsu:.2f} kcal/Tag")
 
 print()
 
-print("Wähle dein Kalorienziel:")
+defizitProTag = gsu * 0.15
+
+taeglicherBedarf = gsu - defizitProTag
+
+verlustDerWoche = (defizitProTag * 7) / 7000
 
 print()
 
-gewichtsziel = float(input("Gib dein gewünschtes Gewichtsziel pro Woche in kg ein (z.B. 0,5 für 0,5 kg/Woche): "))
-def berechne_kalorienziel(gsu, gewichtsziel):
-    kalorienziel = gsu - (gewichtsziel * 7000) / 7
-    return kalorienziel
+print("Wähle dein Zielgewicht ein:")
 
 print()
 
-kalorienziel = berechne_kalorienziel(gsu, gewichtsziel)
-print(f"Dein tägliches Kalorienziel zum Erreichen deines Gewichtsverlustziels beträgt: {kalorienziel:.2f} kcal/Tag")
+gewichtsziel = float(input(" "))
+
+GewichtVerlieren = gewicht - gewichtsziel
+
+dauer = GewichtVerlieren / verlustDerWoche
+
+print(f"""
+Zu verlieren:                 {GewichtVerlieren} kg
+Empfohlenes Defizit:          {round(defizitProTag)} kcal/Tag (15% deines GSU)
+Dein tägliches Kalorienziel:  {round(taeglicherBedarf)} kcal/Tag
+Verlust pro Woche:            {round(verlustDerWoche, 2)} kg
+Geschätzte Dauer:             {round(dauer)} Wochen
+""")
