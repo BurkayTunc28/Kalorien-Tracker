@@ -1,0 +1,31 @@
+from fastapi import APIRouter, Depends
+from app.models.user import User
+from app.security import token_auth
+from app.services.user import (
+    create_user as create_user_service,
+    get_users as get_users_service,
+    delete_user as delete_user_service
+)
+from app.schemas.user import UserPublic, UserCreate
+from app.database import SessionDep
+from typing import Annotated
+from fastapi import Query
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+@router.post("/")
+def create_user(user: UserCreate, session: SessionDep) -> UserPublic:
+    return create_user_service(user=user, session=session)
+
+
+@router.get("/")
+def get_users(
+    session: SessionDep,
+    user: User = Depends(token_auth),
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100,) -> list[UserPublic]:
+    return get_users_service(session=session, offset=offset, limit=limit)
+
+@router.delete("/{user_id}")
+def delete_user(user_id: int, session: SessionDep) -> dict:
+    return delete_user_service(user_id=user_id, session=session)
