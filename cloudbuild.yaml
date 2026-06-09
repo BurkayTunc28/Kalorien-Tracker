@@ -1,0 +1,15 @@
+steps:
+  - name: 'python:3.12'
+    entrypoint: 'pip'
+    args: ['install', 'uv']
+
+  - name: 'python:3.12'
+    entrypoint: 'uv'
+    args: ['sync']
+
+  - name: 'python:3.12'
+    entrypoint: 'uv'
+    args: ['run', 'pytest', 'app/tests/', '-v']
+
+options:
+  logging: 'CLOUD_LOGGING_ONLY'
