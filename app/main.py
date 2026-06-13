@@ -28,4 +28,4 @@ app.include_router(auth_router)
 
 @app.get("/")
 def get_root():
-   return {"message": "Willkommen zum Kalorien-Tracker API! Besuche /docs für die API-Dokumentation."}
+   return {"message": "Willkommen zum Kalorien-Tracker API!"}

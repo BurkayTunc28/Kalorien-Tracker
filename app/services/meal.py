@@ -4,9 +4,6 @@
 #select → SQL-Abfrage in Python
 #HTTPException → Fehler zurückschicken
 
-from app.models import food
-from app.models import meal
-from app.schemas import meal
 from app.models.meal import Meal
 from app.schemas.meal import MealCreate
 from app.database import SessionDep
@@ -41,9 +38,6 @@ def get_meals(user_id: int, session: SessionDep) -> list[Meal]:
     meals = session.exec(select(Meal).where(Meal.user_id == user_id)).all()
     return meals
 
-
-
-
 def get_daily_meals(user_id: int, session: SessionDep) -> dict:
     # Kalorienziel aus dem Profil holen
     profile = get_profile(user_id, session)
@@ -66,7 +60,6 @@ def get_daily_meals(user_id: int, session: SessionDep) -> dict:
         "kalorienziel": round(kalorienziel, 2),
         "noch_uebrig": round(noch_uebrig, 2)
     }
-
 
 def delete_meal(meal_id: int, session: SessionDep) -> dict:
     meal = session.get(Meal, meal_id)

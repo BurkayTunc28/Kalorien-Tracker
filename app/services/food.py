@@ -5,8 +5,6 @@
 #select → SQL-Abfrage in Python
 #HTTPException → Fehler zurückschicken
 
-from flask import session
-
 from app.models.food import Food
 from app.schemas.food import FoodCreate
 from app.database import SessionDep
