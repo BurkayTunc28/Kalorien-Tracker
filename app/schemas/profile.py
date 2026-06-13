@@ -12,6 +12,7 @@ class ProfileCreate(BaseModel):
     alter: int
     geschlecht: str
     aktivitaet: int
+    zielgewicht: float
     
    
 class ProfilePublic(BaseModel):
@@ -22,6 +23,7 @@ class ProfilePublic(BaseModel):
     alter: int
     geschlecht: str
     aktivitaet: int
+    zielgewicht: float
     kalorienziel: float
     created_at: datetime
     

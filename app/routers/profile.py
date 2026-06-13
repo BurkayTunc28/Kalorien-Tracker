@@ -19,8 +19,8 @@ def create_profile(profile: ProfileCreate, session: SessionDep) -> ProfilePublic
 def get_profile(user_id: int, session: SessionDep) -> ProfilePublic:
     return get_profile_service(user_id=user_id, session=session)
 
-@router.get("/ziel/{user_id}/{zielgewicht}")
-def get_ziel(user_id: int, zielgewicht: float, session: SessionDep) -> dict:
+@router.get("/ziel/{user_id}")
+def get_ziel(user_id: int, session: SessionDep) -> dict:
     # 1. Profil aus DB holen
     profile = get_profile_service(user_id=user_id, session=session)
     
@@ -38,6 +38,6 @@ def get_ziel(user_id: int, zielgewicht: float, session: SessionDep) -> dict:
     # 4. Ziel berechnen
     return berechne_ziel_service(
         gewicht=profile.gewicht,
-        zielgewicht=zielgewicht,
+        zielgewicht=profile.zielgewicht,
         gsu=gsu
     )

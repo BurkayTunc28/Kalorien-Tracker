@@ -12,6 +12,7 @@ class Profile(SQLModel, table=True):
     alter: int
     geschlecht: str
     aktivitaet: int
+    zielgewicht: float
     kalorienziel: float
     user_id: int = Field(foreign_key="user.id", index=True)
    

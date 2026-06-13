@@ -53,6 +53,7 @@ def create_profile(profile: ProfileCreate, session: SessionDep) -> Profile:
         alter=profile.alter,
         geschlecht=profile.geschlecht,
         aktivitaet=profile.aktivitaet,
+        zielgewicht=profile.zielgewicht,
         kalorienziel=round(kalorienziel, 2)
     )
     

@@ -18,9 +18,9 @@ def create_meal(meal: MealCreate, session: SessionDep) -> MealPublic:
 def get_meals(user_id: int, session: SessionDep) -> list[MealPublic]:
     return get_meal_service(user_id=user_id, session=session)
 
-@router.get("/daily/{user_id}/{kalorienziel}")
-def get_daily_meals(user_id: int, kalorienziel: float, session: SessionDep) -> dict:
-    return get_daily_meals_service(user_id=user_id, kalorienziel=kalorienziel, session=session)
+@router.get("/daily/{user_id}")
+def get_daily_meals(user_id: int, session: SessionDep) -> dict:
+    return get_daily_meals_service(user_id=user_id, session=session)
 
 @router.delete("/{meal_id}")
 def delete_meal(meal_id: int, session: SessionDep) -> dict:

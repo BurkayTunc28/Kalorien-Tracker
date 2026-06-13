@@ -7,6 +7,7 @@ class Meal(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
 
     #Angaben für das Profil eines Benutzers (ähnlich wie in einer SQL Datenbank)
+    name: str | None = None
     user_id: int = Field(foreign_key="user.id", index=True)
     food_id: int = Field(foreign_key="food.id", index=True)
 

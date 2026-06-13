@@ -10,11 +10,13 @@ class FoodCreate(BaseModel):
     protein: float
     kohlenhydrate: float
     fett: float
+    menge_gramm: float
 
 class FoodPublic(BaseModel):
     id: int
     created_at: datetime
     name: str
+    menge_gramm: float
     kalorien: float
     protein: float
     kohlenhydrate: float

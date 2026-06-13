@@ -4,10 +4,14 @@
 #select → SQL-Abfrage in Python
 #HTTPException → Fehler zurückschicken
 
+from app.models import food
+from app.models import meal
+from app.schemas import meal
 from app.models.meal import Meal
 from app.schemas.meal import MealCreate
 from app.database import SessionDep
 from app.services.food import get_food_by_id
+from app.services.profile import get_profile
 from sqlmodel import select
 from fastapi import HTTPException
 from datetime import date
@@ -19,11 +23,10 @@ def create_meal(meal: MealCreate, session: SessionDep) -> Meal:
     food = get_food_by_id(meal.food_id, session)
 
     # 2. Kalorien berechnen
-    # (menge / 100) × kalorien pro 100g
-    # Beispiel:meal.menge = 200g (wie viel gegessen)
-    # food.kalorien = 165 kcal    (pro 100g laut Datenbank)
-    # kalorien = (200 / 100) × 165 kalorien = 2 × 165 kalorien = 330 kcal
-    kalorien = (meal.menge / 100) * food.kalorien
+    # Kalorien berechnen basierend auf der Referenzmenge des Lebensmittels
+    # Beispiel: menge=200g, food.kalorien=165 bei referenz_menge=100g
+    # kalorien = (200 / 100) * 165 = 330 kcal
+    kalorien = (meal.menge / food.menge_gramm) * food.kalorien
 
       # 3. Meal-Objekt erstellen mit berechneten Kalorien
     db_meal = Meal(name=meal.name, user_id = meal.user_id, food_id = meal.food_id, menge = meal.menge, kalorien = round(kalorien, 2))
@@ -39,24 +42,22 @@ def get_meals(user_id: int, session: SessionDep) -> list[Meal]:
     return meals
 
 
-def get_daily_meals(user_id: int, kalorienziel: float, session: SessionDep) -> dict:
-    # Alle Mahlzeiten von HEUTE holen
+
+
+def get_daily_meals(user_id: int, session: SessionDep) -> dict:
+    # Kalorienziel aus dem Profil holen
+    profile = get_profile(user_id, session)
+    kalorienziel = profile.kalorienziel
+    
     heute = date.today()
-
-    # Holt alle Mahlzeiten dieses Users aus der DB
-    # nur die Mahlzeiten dieses Users, nicht alle.
     meals = session.exec(select(Meal).where(Meal.user_id == user_id,)).all()
-
-    # Nur Mahlzeiten von heute filtern
+    
     meals_heute = []
     for m in meals:
         if m.created_at.date() == heute:
             meals_heute.append(m)
     
-    # Gesamtkalorien summieren
     gesamtkalorien = sum(m.kalorien for m in meals_heute)
-    
-    # Noch übrig berechnen
     noch_uebrig = kalorienziel - gesamtkalorien
     
     return {

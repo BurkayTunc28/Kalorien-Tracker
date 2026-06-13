@@ -12,6 +12,7 @@ class Food(SQLModel, table=True):
     protein: float
     kohlenhydrate: float
     fett: float
+    menge_gramm: float
 
     #Wann das Lebensmittel Eintrag erstellt wurde (automatisch mit aktuellem Datum gefüllt)
     created_at: datetime = Field(
