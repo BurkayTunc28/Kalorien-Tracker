@@ -1,5 +1,6 @@
 steps:
-  - name: 'python:3.12'
+  - id: "Run Tests"
+    name: 'python:3.12'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -7,6 +8,20 @@ steps:
         pip install uv
         uv sync
         uv run pytest app/tests/ -v
+
+  - id: "Build Container Image"
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west6-docker.pkg.dev/pe-a-498916/kalorien-tracker/kalorien-tracker:latest'
+      - '.'
+
+  - id: "Push Container Image to Registry"
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west6-docker.pkg.dev/pe-a-498916/kalorien-tracker/kalorien-tracker:latest'
 
 options:
   logging: 'CLOUD_LOGGING_ONLY'
