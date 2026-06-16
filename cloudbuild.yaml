@@ -14,14 +14,14 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'europe-west6-docker.pkg.dev/pe-a-498916/kalorien-tracker/kalorien-tracker:latest'
+      - 'europe-west6-docker.pkg.dev/$PROJECT_ID/kalorien-tracker/kalorien-tracker:$COMMIT_SHA'
       - '.'
 
   - id: "Push Container Image to Registry"
     name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'europe-west6-docker.pkg.dev/pe-a-498916/kalorien-tracker/kalorien-tracker:latest'
+      - 'europe-west6-docker.pkg.dev/$PROJECT_ID/kalorien-tracker/kalorien-tracker:$COMMIT_SHA'
 
 options:
   logging: 'CLOUD_LOGGING_ONLY'
