@@ -28,7 +28,8 @@ def create_db_and_tables():
 
 #Öffnet ein "Gespräch" mit der Datenbank.
 #Jedes Mal wenn jemand einen API-Request macht (z.B. POST /foods), wird eine neue Session geöffnet.
-# Die Session ist wie ein Gespräch: du sagst was du willst, die Datenbank antwortet, und wenn du fertig bist schliesst sich das Gespräch automatisch.
+# Die Session ist wie ein Gespräch: du sagst was du willst, die Datenbank antwortet, und wenn du
+# fertig bist schliesst sich das Gespräch automatisch.
 # yield bedeutet: "gib die Session raus, und wenn der Request fertig ist, räum automatisch auf."
 def get_session():
     with Session(engine) as session:
