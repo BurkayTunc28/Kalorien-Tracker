@@ -73,8 +73,8 @@ steps:
       # Macht die API öffentlich erreichbar ohne Google-Login
       - '--allow-unauthenticated'
 
-      - '--port=8000'
-      
+      - '--port=8100'
+
       # Minimal 0 laufende Instanzen -> wenn niemand die API nutzt, kostet es nichts
       - '--min-instances=0'
 
