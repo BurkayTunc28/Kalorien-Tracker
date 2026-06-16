@@ -1,7 +1,18 @@
+# Diese Datei sagt Google Cloud Build was bei jedem "git push" automatisch passieren soll.
+# Die Schritte laufen in der Reihenfolge wie sie hier stehen: Tests -> Image bauen -> Image hochladen -> Deployen
+
 steps:
+
+  # ---------- SCHRITT 1: TESTS AUSFÜHREN ----------
   - id: "Run Tests"
+    # Nimmt das offizielle Python 3.12 Image als Container für diesen Schritt
     name: 'python:3.12'
+    # Sagt: führe die folgenden Befehle über bash aus
     entrypoint: 'bash'
+
+    # uv installiert alle Dependencies aus pyproject.toml / uv.lock
+    # Führt alle Tests im Ordner app/tests/ aus, -v = ausführliche Ausgabe
+    # Falls ein Test fehlschlägt, bricht die ganze Pipeline hier ab
     args:
       - '-c'
       - |
@@ -9,19 +20,67 @@ steps:
         uv sync
         uv run pytest app/tests/ -v
 
+  # ---------- SCHRITT 2: DOCKER-IMAGE BAUEN ----------
   - id: "Build Container Image"
+    # Googles offizielles Image das Docker selbst enthält (Docker-in-Docker)
     name: 'gcr.io/cloud-builders/docker'
     args:
+      # docker build -> baut ein Image aus dem Dockerfile
       - 'build'
+      # -t = Tag/Name für das Image
       - '-t'
+      # $PROJECT_ID wird automatisch durch deine Project ID ersetzt
+      # $COMMIT_SHA wird automatisch durch den Git-Commit-Hash ersetzt
+      # jedes Image ist eindeutig nachverfolgbar
       - 'europe-west6-docker.pkg.dev/$PROJECT_ID/kalorien-tracker/kalorien-tracker:$COMMIT_SHA'
+
+      # Der Punkt sagt: benutze das Dockerfile im aktuellen Verzeichnis
       - '.'
 
+  # ---------- SCHRITT 3: IMAGE IN DIE ARTIFACT REGISTRY HOCHLADEN ----------
   - id: "Push Container Image to Registry"
+    # Wieder das Docker-Image von Google
     name: 'gcr.io/cloud-builders/docker'
+
     args:
+      # docker push -> lädt das eben gebaute Image in die Registry hoch
       - 'push'
       - 'europe-west6-docker.pkg.dev/$PROJECT_ID/kalorien-tracker/kalorien-tracker:$COMMIT_SHA'
 
+  # ---------- SCHRITT 4: AUF CLOUD RUN DEPLOYEN ----------
+  - id: "Deploy to Cloud Run"
+    # Googles Image das das gcloud-Kommandozeilen-Tool enthält
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    # In diesem Container wird der Befehl "gcloud" ausgeführt
+    entrypoint: 'gcloud'
+    args:
+      # run deploy -> erstellt oder aktualisiert einen Cloud Run Service
+      - 'run'
+      - 'deploy'
+
+      # Name des Cloud Run Service
+      - 'kalorien-tracker'
+
+      # Welches Docker-Image gestartet werden soll - genau das Image mit demselben Commit-Tag von Schritt 2/3
+      - '--image=europe-west6-docker.pkg.dev/$PROJECT_ID/kalorien-tracker/kalorien-tracker:$COMMIT_SHA'
+
+      # Region, gleich wie die Artifact Registry, damit alles zusammenpasst
+      - '--region=europe-west6'
+
+      # "managed" = volle serverlose Variante, Google verwaltet die Infrastruktur
+      - '--platform=managed'
+
+      # Macht die API öffentlich erreichbar ohne Google-Login
+      - '--allow-unauthenticated'
+
+      # Minimal 0 laufende Instanzen -> wenn niemand die API nutzt, kostet es nichts
+      - '--min-instances=0'
+
+      # Maximal 1 laufende Instanz -> verhindert hohe Kosten bei vielen Requests gleichzeitig
+      - '--max-instances=1'
+
+# Globale Einstellungen für den gesamten Build
 options:
+
+  # Logs werden nur in Cloud Logging gespeichert (Standard-Einstellung)
   logging: 'CLOUD_LOGGING_ONLY'
