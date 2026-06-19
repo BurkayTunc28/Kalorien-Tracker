@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 
 #wer benutzt die App
 class User(SQLModel, table=True):

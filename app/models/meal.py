@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field
 from datetime import datetime, date
 
-#Beantowrtet die Frage: "Mein Profil: Gewicht, Grösse, Alter, wie aktiv ich bin, mein Kalorienziel"
+# Beantwortet die Frage: "Welche Mahlzeit habe ich wann mit welchem Lebensmittel gegessen?"
 class Meal(SQLModel, table=True):
     # DB vergibt ID automatisch mit default=None
     id: int = Field(default=None, primary_key=True)

@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from datetime import datetime
 
 #Beantowrtet die Frage: "Lebensmittel: Name, Kalorien, Protein, Kohlenhydrate, Fett"

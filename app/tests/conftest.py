@@ -47,6 +47,7 @@ def user_burkay(db) -> User:
     db.refresh(user)
     return user
 
+#Food Item 1
 @fixture
 def food_poulet(db) -> Food:
     food = Food(name="Poulet", menge_gramm=100, kalorien=165, protein=31, kohlenhydrate=0, fett=3.6)
@@ -55,6 +56,7 @@ def food_poulet(db) -> Food:
     db.refresh(food)
     return food
 
+#Food Item 1
 @fixture
 def food_reis(db) -> Food:
     food = Food(name="Reis", menge_gramm=100, kalorien=130, protein=2.7, kohlenhydrate=28, fett=0.3)
