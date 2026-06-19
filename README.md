@@ -196,33 +196,29 @@ Zeigt wie viel Gewicht noch zu verlieren ist, das empfohlene tägliche Defizit, 
 
 ### Alle Endpunkte
 
-| Methode | Endpunkt                 | Beschreibung 
-
-| POST    | /users/                  | User registrieren 
-| POST    | /auth/login              | Einloggen, Token erhalten 
-| GET     | /users/                  | Alle User abrufen (Token nötig) 
-| POST    | /foods/                  | Lebensmittel erfassen 
-| GET     | /foods/                  | Alle Lebensmittel abrufen 
-| GET     | /foods/{id}              | Ein Lebensmittel abrufen 
-| DELETE  | /foods/{id}              | Lebensmittel löschen 
-| POST    | /meals/                  | Mahlzeit erfassen 
-| GET     | /meals/user/{user_id}    | Alle Mahlzeiten eines Users 
-| GET     | /meals/daily/{user_id}   | Tagesübersicht 
-| DELETE  | /meals/{id}              | Mahlzeit löschen 
-| POST    | /profiles/               | Profil erstellen 
-| GET     | /profiles/{user_id}      | Profil abrufen 
-| GET     | /profiles/ziel/{user_id} | Zielgewicht-Berechnung 
+- `POST /users/` — User registrieren
+- `POST /auth/login` — Einloggen, Token erhalten
+- `GET /users/` — Alle User abrufen (Token nötig)
+- `POST /foods/` — Lebensmittel erfassen
+- `GET /foods/` — Alle Lebensmittel abrufen
+- `GET /foods/{id}` — Ein Lebensmittel abrufen
+- `DELETE /foods/{id}` — Lebensmittel löschen
+- `POST /meals/` — Mahlzeit erfassen
+- `GET /meals/user/{user_id}` — Alle Mahlzeiten eines Users
+- `GET /meals/daily/{user_id}` — Tagesübersicht
+- `DELETE /meals/{id}` — Mahlzeit löschen
+- `POST /profiles/` — Profil erstellen
+- `GET /profiles/{user_id}` — Profil abrufen
+- `GET /profiles/ziel/{user_id}` — Zielgewicht-Berechnung
 
 ### Was ist der Unterschied zwischen den GET-Endpunkten?
 
 Diese Endpunkte noch konkreter erklärt:
 
-| Endpunkt                        | Zweck 
-
-| `GET /meals/user/{user_id}`     | Alle Mahlzeiten aller Zeit (Historie)
-| `GET /meals/daily/{user_id}`    | Nur heutige Mahlzeiten + Vergleich mit Kalorienziel
-| `GET /profiles/{user_id}`       | Gespeicherte Profildaten unverändert anzeigen 
-| `GET /profiles/ziel/{user_id}`  | NEUE Berechnung: Wochen bis Zielgewicht
+- `GET /meals/user/{user_id}` — Alle Mahlzeiten aller Zeit (Historie)
+- `GET /meals/daily/{user_id}` — Nur heutige Mahlzeiten + Vergleich mit Kalorienziel
+- `GET /profiles/{user_id}` — Gespeicherte Profildaten unverändert anzeigen
+- `GET /profiles/ziel/{user_id}` — NEUE Berechnung: Wochen bis Zielgewicht
 
 
 ## Tests
@@ -245,29 +241,25 @@ uv run pytest app/tests/test_profiles.py -v
 
 ### Aktuelle Coverage: 93%
 
-| Datei               | Coverage 
-
-| models/             | 100% 
-| schemas/            | 100% 
-| security.py         | 100% 
-| routers/            | 88-100% 
-| services/profile.py | 87% 
-| services/auth.py    | 91% 
-| services/food.py    | 85% 
-| services/meal.py    | 74% 
-| services/user.py    | 77% 
+- **models/** — 100%
+- **schemas/** — 100%
+- **security.py** — 100%
+- **routers/** — 88-100%
+- **services/profile.py** — 87%
+- **services/auth.py** — 91%
+- **services/food.py** — 85%
+- **services/meal.py** — 74%
+- **services/user.py** — 77%
 
 Services wurden hier genauer unterteilt, da die meiste Code Logik hier ist und diese dementsprechend getestet wurde.
 
 ### Was wird getestet
 
--Testdatei        | Was wird geprüft
-
--test_users.py    | User erstellen, doppelte Email, fehlendes Passwort 
--test_auth.py     | Login, falsches Passwort, JWT-Schutz 
--test_foods.py    | Lebensmittel erstellen, abrufen, löschen, 404 
--test_profiles.py | BMR/GSU-Formel prüfen ob sie klappt, Zielgewicht-Berechnung 
--test_meals.py    | Kalorienberechnung, Tagessumme, löschen 
+- **test_users.py** — User erstellen, doppelte Email, fehlendes Passwort
+- **test_auth.py** — Login, falsches Passwort, JWT-Schutz
+- **test_foods.py** — Lebensmittel erstellen, abrufen, löschen, 404
+- **test_profiles.py** — BMR/GSU-Formel prüfen ob sie klappt, Zielgewicht-Berechnung
+- **test_meals.py** — Kalorienberechnung, Tagessumme, löschen
 
 ## Überlegungen während der Entwicklung
 
