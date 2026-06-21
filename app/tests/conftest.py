@@ -79,7 +79,7 @@ def profile_burkay(db, user_burkay) -> Profile:
     )
     return create_profile(profile_data, db)
 
-# Rohdaten für ein Profil - werden sowohl zum POST-Request als auch zur Berechnung der Erwartungswerte im Test genutzt
+# Rohdaten für ein Profil, werden sowohl zum POST-Request als auch zur Berechnung der Erwartungswerte im Test genutzt
 @fixture
 def profile_burkay_daten(user_burkay) -> dict:
     return {

@@ -2,7 +2,7 @@
 
 # Kalorien-Tracker
 
-# ```bash ist da um den code/gewisse Abschnitte hervorzuheben
+### ```bash ist da um den code/gewisse Abschnitte hervorzuheben
 
 ## Was macht die App?
 
@@ -90,8 +90,8 @@ Die API ist danach erreichbar unter:
 ```bash
 POST /users/
 {
-  "email": "deine@email.ch",
-  "password": "passwort"
+  "email": "beispiel@mail.ch",
+  "password": "123"
 }
 ```
 
@@ -104,8 +104,8 @@ auch wenn es im Request mitgeschickt wurde.
 ```bash
 POST /auth/login
 {
-  "email": "deine@email.ch",
-  "password": "passwort"
+  "email": "beispiel@mail.ch",
+  "password": "123"
 }
 ```
 ![Login erfolgreich](docs/images/04-auth-erfolgreich.png)
@@ -121,36 +121,16 @@ Den Token kopiert man und trägt ihn oben rechts unter "Authorize" ein:
 
 Ab jetzt sind alle geschützten Endpunkte (z.B. `GET /users/`) freigeschaltet.
 
-**3. Profil erstellen**
-```bash
-POST /profiles/
-{
-  "user_id": 1,
-  "gewicht": 110,
-  "zielgewicht": 90,
-  "groesse": 172,
-  "alter": 26,
-  "geschlecht": "m",
-  "aktivitaet": 1
-}
-
-```
-![Profil erstellen](docs/images/08-profile-erstellen.png)
-
-`kalorienziel` wird automatisch berechnet (BMR → GSU → -15% Defizit) und in der
-Antwort zurückgegeben, der User gibt diesen Wert nirgends selbst ein.
-
-
-**4. Lebensmittel erfassen**
+**3. Lebensmittel erfassen**
 ```bash
 POST /foods/
 {
   "name": "Poulet",
-  "menge_gramm": 100,
-  "kalorien": 165,
-  "protein": 31,
-  "kohlenhydrate": 0,
-  "fett": 3.6
+  "kalorien": 120,
+  "protein": 20,
+  "kohlenhydrate": 30,
+  "fett": 4,
+  "menge_gramm": 100
 }
 ```
 
@@ -159,17 +139,34 @@ POST /foods/
 `menge_gramm` definiert auf welche Menge sich die Nährwerte beziehen, meist 100g,
 kann aber auch eine andere Referenzmenge sein (z.B. 30g für eine Portion).
 
+**4. Profil erstellen**
+```bash
+POST /profiles/
+{
+  "user_id": 1,
+  "gewicht": 110,
+  "groesse": 170,
+  "alter": 27,
+  "geschlecht": "m",
+  "aktivitaet": 1,
+  "zielgewicht": 90
+}
+```
+![Profil erstellen](docs/images/08-profile-erstellen.png)
+
+`kalorienziel` wird automatisch berechnet (BMR → GSU → -15% Defizit) und in der
+Antwort zurückgegeben — der User gibt diesen Wert nirgends selbst ein. In diesem
+Beispiel ergibt sich ein Kalorienziel von 2283.05 kcal/Tag.
 
 **5. Mahlzeit erfassen**
 ```bash
 POST /meals/
 {
+  "name": "Poulet Geschnetzeltes",
   "user_id": 1,
   "food_id": 1,
-  "menge": 200,
-  "name": "Mittagessen"
+  "menge": 200
 }
-
 ```
 ![Meal erstellen](docs/images/09-meal-erstellen.png)
 
@@ -182,9 +179,9 @@ GET /meals/daily/1
 ```
 ![Tagesübersicht](docs/images/10-daily-meals.png)
 
-Zeigt: heute gegessene Kalorien, das Kalorienziel aus dem Profil, und wie viel noch übrig ist.
-Diese Übersicht summiert automatisch alle Mahlzeiten des aktuellen Tages.
-
+Zeigt: heute gegessene Kalorien (240), das Kalorienziel aus dem Profil (2283.05),
+und wie viel noch übrig ist (2043.05). Diese Übersicht summiert automatisch alle
+Mahlzeiten des aktuellen Tages.
 
 **7. Zielgewicht-Berechnung**
 ```bash
@@ -192,7 +189,9 @@ GET /profiles/ziel/1
 ```
 ![Zielgewicht Berechnung](docs/images/11-profile-ziel.png)
 
-Zeigt wie viel Gewicht noch zu verlieren ist, das empfohlene tägliche Defizit, und die geschätzte Dauer in Wochen bis zum Zielgewicht.
+Zeigt wie viel Gewicht noch zu verlieren ist (20 kg), das empfohlene tägliche
+Defizit (403 kcal), und die geschätzte Dauer bis zum Zielgewicht (50 Wochen).
+
 
 ### Alle Endpunkte
 
@@ -203,13 +202,14 @@ Zeigt wie viel Gewicht noch zu verlieren ist, das empfohlene tägliche Defizit, 
 - `GET /foods/` — Alle Lebensmittel abrufen
 - `GET /foods/{id}` — Ein Lebensmittel abrufen
 - `DELETE /foods/{id}` — Lebensmittel löschen
+- `POST /profiles/` — Profil erstellen
+- `GET /profiles/{user_id}` — Profil abrufen
+- `GET /profiles/ziel/{user_id}` — Zielgewicht-Berechnung
 - `POST /meals/` — Mahlzeit erfassen
 - `GET /meals/user/{user_id}` — Alle Mahlzeiten eines Users
 - `GET /meals/daily/{user_id}` — Tagesübersicht
 - `DELETE /meals/{id}` — Mahlzeit löschen
-- `POST /profiles/` — Profil erstellen
-- `GET /profiles/{user_id}` — Profil abrufen
-- `GET /profiles/ziel/{user_id}` — Zielgewicht-Berechnung
+
 
 ### Was ist der Unterschied zwischen den GET-Endpunkten?
 

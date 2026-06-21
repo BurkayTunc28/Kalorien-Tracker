@@ -1,6 +1,6 @@
 #IntegrityError → Fehler wenn Email schon existiert
-#FoodCreate → dein Schema (was der Food schickt)
-#Food → dein Model (die Datenbanktabelle)
+#FoodCreate → Schema (was der Food schickt)
+#Food → Model (die Datenbanktabelle)
 #SessionDep → die DB-Session
 #select → SQL-Abfrage in Python
 #HTTPException → Fehler zurückschicken
@@ -11,7 +11,7 @@ from app.database import SessionDep
 from sqlmodel import select
 from fastapi import HTTPException
 
-#die Daten die Food geschickt hat (name, calories, protein etc.)
+#Die Daten die Food geschickt hat (name, calories, protein etc.)
 #konvertiert das Schema in ein Model d.h. aus FoodCreate wird ein Food-Objekt das in die DB gespeichert werden kann
 def create_food(food: FoodCreate, session: SessionDep) -> Food:
     db_food = Food.model_validate(food)
