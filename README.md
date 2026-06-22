@@ -263,6 +263,12 @@ Services wurden hier genauer unterteilt, da die meiste Code Logik hier ist und d
 
 ## Überlegungen während der Entwicklung
 
+## Warum überhaupt die Kalorietracker App?
+Es war eine eigene Frustation, da ich privat intensiver auf meine Ernährung achten wollte, musste ich das aktiv
+dokumentieren. Es gibt dafür zwar zahlreiche Apps, aber jedes von ihnen arbeitet mit einem Abo model, welches
+Pflicht wird nach 1-2 Wochen. Da ich im Studium den Fokus auf Softwareentwicklung habe, beschloss ich deswegen
+meine eigene Version der App zu erstellen.
+
 ### Von Terminal zu API
 Der Ausgangspunkt war eine einfache Terminal Version (`terminal.py`) das Gewicht, Grösse, Alter und Aktivitätslevel
 per `input()` abfragt und daraus den Kalorienbedarf berechnet. Das Ziel war, diese Logik in eine echte REST-API zu
