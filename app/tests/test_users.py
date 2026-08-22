@@ -6,7 +6,7 @@ def test_read_root_200(client):
 
 def test_create_user(client):
     response = client.post("/users", json={"email": "burkay@test.ch", "password": "1234"})
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
     assert "id" in data
     assert "password" not in data
