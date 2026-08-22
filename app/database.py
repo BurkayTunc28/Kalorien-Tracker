@@ -3,21 +3,30 @@
 #Session → ein einzelnes "Gespräch" mit der Datenbank
 #SQLModel → das ORM — verbindet Python-Klassen mit Datenbanktabellen
 #create_engine → erstellt die Verbindung zur Datenbank
-
+import os
 from typing import Annotated
 from fastapi import Depends
 from sqlmodel import Session, SQLModel, create_engine
 
-sqlite_file_name = "kalorien_tracker.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+#alte Version: sqlite_url = "sqlite:///database.db"
+#sqlite_file_name = "kalorien_tracker.db"
+#sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 #Die Verbindung zur Datenbank.
 #engine ist wie ein Fahrer der weiss wo die Datenbank ist.
 # Er wird einmal erstellt und von allen anderen Teilen der App benutzt.
 # check_same_thread: False ist nötig weil FastAPI mehrere Anfragen gleichzeitig bearbeiten kann
 # Ohne das würde SQLite sich beschweren dass mehrere "Threads" gleichzeitig auf die Datei zugreifen.
-connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
+#connect_args = {"check_same_thread": False}
+
+#neue Version: postgres_url
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://kalorientracker:kalorientracker@localhost:5432/kalorientracker"
+)
+
+
+engine = create_engine(DATABASE_URL)
 
 #Erstellt alle Tabellen in der Datenbank.
 #Diese Funktion wird einmal beim App-Start aufgerufen.

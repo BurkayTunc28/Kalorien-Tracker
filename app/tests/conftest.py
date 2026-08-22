@@ -1,3 +1,4 @@
+import os
 from fastapi.testclient import TestClient
 from app.main import app
 from sqlmodel import SQLModel, create_engine, Session
@@ -13,15 +14,14 @@ from app.services.profile import create_profile
 from app.schemas.profile import ProfileCreate
 from app.services.profile import berechne_bmr, berechne_gsu
 
-
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "postgresql://kalorientracker:kalorientracker@localhost:5432/kalorientracker_test"
+)
 
 @fixture
 def db():
-    sqlite_file_name = "database_test.db"
-    sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-    connect_args = {"check_same_thread": False}
-    engine = create_engine(sqlite_url, connect_args=connect_args)
+    engine = create_engine(TEST_DATABASE_URL)
 
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
@@ -32,7 +32,10 @@ def db():
 
     app.dependency_overrides[get_session] = override_get_session
 
-    return Session(engine)
+    session = Session(engine)
+    yield session
+    session.close()
+    engine.dispose()
 
 @fixture
 def client(db):
@@ -140,5 +143,3 @@ def client_burkay(client, user_burkay):
     access_token = create_jwt(user_burkay).access_token
     client.headers["Authorization"] = f"Bearer {access_token}"
     return client
-
-
