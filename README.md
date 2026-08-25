@@ -329,4 +329,28 @@ besseren Überblick über längere Zeiträume geben.
 Die App ist aktuell nur über die Swagger UI oder direkt per API nutzbar. Ein einfaches Web-Frontend
 (z.B. mit React oder einer mobilen App) würde die Nutzung deutlich komfortabler machen.
 
+# ATL 2
 
+## Ausgangslage
+
+Das Softwareprojekt aus ATL 1 lief bisher nur lokal auf meinem Laptop. Ziel von ATL 2 war es, die App
+in der Google Cloud verfügbar zu machen, mit einer automatisierten Pipeline, die bei jedem Push die Tests
+ausführt und nur bei erfolgreichen Tests ein Deployment durchführt. Damit die Software von mehreren Benutzern
+gleichzeitig genutzt werden kann, sollte sie in der Cloud gehostet und im Internet verfügbar sein.
+
+## Auftrag
+
+Konkret ging es darum:
+
+─ Google Cloud Projekt einrichten (inkl. Budget-Alarm)
+─ Cloud Build mit dem GitHub-Repository verbinden und einen Trigger einrichten
+─ Bei jedem Push: Tests automatisch ausführen
+─ Bei erfolgreichen Tests: Docker-Image bauen und in die Artifact Registry hochladen
+─ Das Image als Cloud Run Service deployen
+─ Nachweisen, dass die Pipeline bei einem fehlschlagenden Test korrekt abbricht
+
+Die Einrichtung von Cloud Build, Artifact Registry und Cloud Run wurde gemeinsam mit dem Dozenten im Unterricht
+anhand einer Live-Demonstration erarbeitet, basierend auf den bereitgestellten Aufgabenblättern (Woche 16/17).
+Daher waren die Herausforderungen in diesem Teil nicht alzu gross. Es gab natürlich noch Probleme im Eigenen Rahmen:
+
+Die praktische Umsetzung und Anpassung an mein eigenes Projekt (Kalorien-Tracker) habe ich danach selbstständig vorgenommen.
