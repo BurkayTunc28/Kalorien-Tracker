@@ -8,27 +8,16 @@ from typing import Annotated
 from fastapi import Depends
 from sqlmodel import Session, SQLModel, create_engine
 
-#alte Version: sqlite_url = "sqlite:///database.db"
-#sqlite_file_name = "kalorien_tracker.db"
-#sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-#Die Verbindung zur Datenbank.
-#engine ist wie ein Fahrer der weiss wo die Datenbank ist.
-# Er wird einmal erstellt und von allen anderen Teilen der App benutzt.
-# check_same_thread: False ist nötig weil FastAPI mehrere Anfragen gleichzeitig bearbeiten kann
-# Ohne das würde SQLite sich beschweren dass mehrere "Threads" gleichzeitig auf die Datei zugreifen.
-#connect_args = {"check_same_thread": False}
-
-#neue Version: postgres_url
+#Lokal (Laptop): kein DATABASE_URL gesetzt -> Fallback auf Postgres via Docker Compose
+#Cloud Build/Cloud Run: DATABASE_URL wird explizit auf SQLite gesetzt (siehe cloudbuild.yaml)
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://kalorientracker:kalorientracker@localhost:5432/kalorientracker"
 )
 
-
+#SQLite braucht dieses spezielle connect_args (wegen Multithreading), Postgres nicht
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
-
 
 #Erstellt alle Tabellen in der Datenbank.
 #Diese Funktion wird einmal beim App-Start aufgerufen.

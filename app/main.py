@@ -6,6 +6,9 @@ from fastapi import FastAPI
 #Die Funktion die beim Start alle Tabellen in der DB erstellt
 from app.database import create_db_and_tables
 
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 from app.routers.user import router as user_router
 from app.routers.meal import router as meal_router
@@ -19,6 +22,18 @@ async def lifespan(app: FastAPI):
    yield
 
 app = FastAPI(lifespan=lifespan)
+
+origins = [
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(user_router)
 app.include_router(food_router)
