@@ -16,6 +16,7 @@ steps:
     args:
       - '-c'
       - |
+        export TEST_DATABASE_URL="sqlite:///database_test.db"
         pip install uv
         uv sync
         uv run pytest app/tests/ -v
@@ -80,6 +81,8 @@ steps:
 
       # Maximal 1 laufende Instanz -> verhindert hohe Kosten bei vielen Requests gleichzeitig
       - '--max-instances=1'
+
+      - '--set-env-vars=DATABASE_URL=sqlite:///kalorien_tracker.db'
 
 # Globale Einstellungen für den gesamten Build
 options:

@@ -26,7 +26,9 @@ DATABASE_URL = os.getenv(
 )
 
 
-engine = create_engine(DATABASE_URL)
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
+
 
 #Erstellt alle Tabellen in der Datenbank.
 #Diese Funktion wird einmal beim App-Start aufgerufen.
