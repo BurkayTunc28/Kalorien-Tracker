@@ -351,6 +351,236 @@ Konkret ging es darum:
 
 Die Einrichtung von Cloud Build, Artifact Registry und Cloud Run wurde gemeinsam mit dem Dozenten im Unterricht
 anhand einer Live-Demonstration erarbeitet, basierend auf den bereitgestellten Aufgabenblättern (Woche 16/17).
-Daher waren die Herausforderungen in diesem Teil nicht alzu gross. Es gab natürlich noch Probleme im Eigenen Rahmen:
+Daher waren die Herausforderungen in diesem Teil nicht allzu gross. Es gab natürlich noch Probleme im eigenen
+Rahmen, welche zwar nicht direkt in der ATL2 verlangt waren, aber die ich dennoch lösen wollte:
 
-Die praktische Umsetzung und Anpassung an mein eigenes Projekt (Kalorien-Tracker) habe ich danach selbstständig vorgenommen.
+Die Umstellung von SQLite auf Postgres, wofür ich einen separaten Eintrag gegen Ende dieser Dokumentation erstellt habe.
+
+## Google Cloud Projekt & Budget
+
+Für das Projekt wurde ein Google Cloud Account mit dem Projekt `HE24-PE A-Burkay` eingerichtet. Um sicherzustellen,
+dass keine unerwarteten Kosten entstehen, habe ich zusätzlich ein Budget mit Alarm-Schwellen bei 50%, 90% und 100%
+von CHF 5.- eingerichtet:
+
+![Budget-Einrichtung](docs/ATL 2 Bilder/Budget.png)
+
+## Die Pipeline (cloudbuild.yaml)
+
+Damit die App überhaupt automatisch getestet und deployed werden kann, musste Cloud Build zuerst wissen, wo sich
+mein Code befindet und wann es aktiv werden soll. Das Ergebnis ist eine Pipeline, die komplett ohne manuelles
+Zutun bei jedem Push abläuft, vom Testen bis zum fertigen, live erreichbaren Service.
+
+### GitHub-Verknüpfung
+
+Damit Cloud Build bei jedem Push automatisch reagieren kann, wurde das GitHub-Repository über die
+offizielle "Google Cloud Build"-GitHub-App mit Cloud Build verbunden. Diese App ist unter den
+installierten GitHub Apps des Repositories sichtbar:
+
+![Google Cloud Build als installierte GitHub App](docs/ATL 2 Bilder/Verknuepfung-GitHub-Cloud-Run-4.png)
+
+In Cloud Build selbst ist ein Trigger `HE24-Blog-Burkay` eingerichtet, der auf das Repository
+`BurkayTunc28/Kalorien-Tracker` hört:
+
+![Cloud Build Trigger-Übersicht](docs/ATL 2 Bilder/Verknuepfung-GitHub-Cloud-Run.png)
+
+Der Trigger reagiert auf das Event "Push to a branch" und ist mit dem Repository verknüpft:
+
+![Trigger-Konfiguration: Quelle und Event](docs/ATL 2 Bilder/Verknuepfung-GitHub-Cloud-Run-2.png)
+
+Konkret wird der Trigger nur bei Pushes auf den `main`-Branch ausgelöst (`^main$` als Regex), und
+verwendet die `cloudbuild.yaml` im Repository-Root als Build-Konfiguration:
+
+![Trigger-Konfiguration: Branch und Build-Datei](docs/ATL 2 Bilder/Verknuepfung-GitHub-Cloud-Run-3.png)
+
+### Die vier Schritte
+
+Die komplette Pipeline besteht aus vier Schritten, die strikt nacheinander ausgeführt werden. Jeder Schritt läuft
+nur, wenn der vorherige erfolgreich war:
+
+1. **Run Tests** — Nimmt das offizielle Python 3.12 Image als Container für diesen Schritt, installiert die Abhängigkeiten via `uv` und führt `pytest app/tests/ -v` aus
+2. **Build Container Image** — baut das Docker-Image mit `docker build` aus dem Dockerfile
+3. **Push Container Image to Registry** — lädt das eben gebaute Image in die Google Artifact Registry hoch
+4. **Deploy to Cloud Run** — deployt das Image als Cloud Run Service
+
+Eine Anmerkung zu den Tests: Ich habe nirgends manuell festgelegt, welche Tests laufen sollen. `pytest` durchsucht automatisch
+den Ordner `app/tests/` nach allen Dateien und Funktionen, die mit `test_` beginnen (Test-Discovery). Jeder neue
+Test, den ich hinzufüge, wird beim nächsten Push automatisch mitgetestet, ohne dass ich die Pipeline anpassen muss.
+
+Da die Schritte sequenziell voneinander abhängen, genügt ein einziger fehlgeschlagener Test, damit Cloud Build die gesamte Pipeline abbricht.
+Build, Push und Deploy werden dann gar nicht erst ausgeführt.
+
+Die vollständige Konfiguration ist in [`cloudbuild.yaml`](cloudbuild.yaml) im Repository-Root einsehbar.
+
+### Dockerfile
+
+Damit der "Build Container Image"-Schritt ein möglichst schlankes und produktionstaugliches Image erzeugt,
+verwendet das Dockerfile einen Multi-Stage-Build:
+
+```dockerfile
+FROM python:3.12-alpine AS builder
+WORKDIR /app
+RUN pip install uv
+COPY uv.lock pyproject.toml ./
+RUN uv export --no-dev --format requirements.txt --no-hashes --no-header --no-annotate > requirements.txt
+
+FROM python:3.12-alpine
+WORKDIR /app
+COPY --from=builder /app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN rm -rf /root/.cache
+RUN rm -rf /tmp/*
+RUN rm -rf /app/requirements.txt
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+COPY ./app ./
+EXPOSE 8100
+ENTRYPOINT ["fastapi", "run", "main.py"]
+CMD ["--port", "8100"]
+```
+
+In der ersten Stage (`builder`) wird `uv` nur genutzt, um aus `pyproject.toml`/`uv.lock` eine
+`requirements.txt` mit den reinen Produktions-Abhängigkeiten zu erzeugen (`--no-dev` schliesst
+Test-Werkzeuge wie `pytest-cov` aus). Die zweite Stage installiert nur diese `requirements.txt` und
+verwirft danach alle Build-Werkzeuge sowie Caches wieder, im finalen Image landet also nur das, was
+zur Laufzeit tatsächlich gebraucht wird. Zusammen mit der schlanken `alpine`-Basis ergibt das ein Image
+von rund 50 MB (sichtbar in der Artifact Registry weiter unten), was schnellere Uploads und schnellere
+Cloud Run Startzeiten ermöglicht.
+
+Der `EXPOSE 8100` und `CMD ["--port", "8100"]` sind bewusst auf denselben Port abgestimmt, den auch die
+`cloudbuild.yaml` beim Cloud Run Deployment erwartet (`--port=8100`), nur wenn beide übereinstimmen,
+kann Cloud Run erkennen, dass der Container erfolgreich gestartet ist und auf Anfragen wartet.
+
+### Artifact Registry
+
+Damit das gebaute Docker-Image nicht bei jedem Deployment neu gebaut werden muss und nachvollziehbar bleibt,
+welche Version wann gebaut wurde, lädt die Pipeline jedes Image in die Google Artifact Registry hoch. Das
+Ergebnis ist eine vollständige, versionierte Historie aller bisherigen Builds, auf die Cloud Run beim
+Deployment direkt zugreifen kann.
+
+Das gebaute Image wird bei jedem Push mit einem eindeutigen Tag (`$COMMIT_SHA`) in der Artifact Registry abgelegt.
+So ist jedes Image eindeutig einem Git-Commit zugeordnet, und die komplette Historie aller bisherigen Builds bleibt
+nachvollziehbar:
+
+![Artifact Registry Repository-Übersicht](docs/ATL 2 Bilder/Artifact-Registry.png)
+![Artifact Registry Package-Ansicht](docs/ATL 2 Bilder/Artifact-Registry-2.png)
+![Artifact Registry Image-Liste mit allen Versionen](docs/ATL 2 Bilder/Artifact-Registry-3.png)
+
+### Cloud Run
+
+Der letzte Schritt der Pipeline deployt das fertige Image als Cloud Run Service — das ist der Teil, der
+das Projekt tatsächlich von "läuft nur lokal" zu "ist im Internet erreichbar" macht. Cloud Run wurde
+gewählt, weil es serverlos ist: Es skaliert bei fehlender Nutzung automatisch auf 0 Instanzen herunter
+und verursacht dann keine Kosten, im Gegensatz zu einem dauerhaft laufenden Server.
+
+Nach erfolgreichem Deployment ist die App öffentlich unter folgender URL erreichbar:
+
+`https://kalorien-tracker-1082755787497.europe-west6.run.app` und/oder `https://kalorien-tracker-1082755787497.europe-west6.run.app/docs`
+
+![Cloud Run Übersicht](docs/ATL 2 Bilder/Cloud-Run.png)
+![Cloud Run Service Details](docs/ATL 2 Bilder/Cloud-Run-2.png)
+
+Die API läuft live und antwortet korrekt:
+
+![Cloud Run live erreichbar - Root Endpoint](docs/ATL 2 Bilder/Cloud-Run-3.png)
+![Cloud Run live erreichbar - Swagger UI](docs/ATL 2 Bilder/Cloud-Run-4.png)
+
+## Nachweis: Cloud Build bricht bei fehlschlagendem Test ab
+
+Um zu überprüfen, dass die Pipeline korrekt reagiert, wenn ein Test fehlschlägt, habe ich die Erwartung
+in `test_create_user` (`app/tests/test_users.py`) verändert.
+
+**Ursprünglicher, korrekter Test:**
+
+![Test korrekt](docs/ATL 2 Bilder/Create-User-Test-Korrekte-Version.png)
+
+**Bewusst veränderter Test** — der erwartete Status-Code wurde von 200 auf 201 gesetzt, obwohl der Endpoint
+tatsächlich 200 zurückgibt:
+
+![Test bewusst fehlerhaft](docs/ATL 2 Bilder/Create-User-Test-Falsche-Version.png)
+
+Nach dem Push zeigt sich: Cloud Build erkennt den fehlgeschlagenen Test (`assert 200 == 201`) und bricht die
+Pipeline direkt nach Schritt "Run Tests" ab. Die nachfolgenden Schritte (Build, Push, Deploy) werden nicht mehr
+ausgeführt, es wird also nichts Fehlerhaftes deployed:
+
+![Build fehlgeschlagen](docs/ATL 2 Bilder/Cloud-Build-Fehlermeldung-201-statt-200-bei-Assert.png)
+
+Nachdem ich die Änderung rückgängig gemacht und erneut gepusht habe, läuft die Pipeline wieder vollständig durch,
+inklusive des zuvor fehlgeschlagenen Tests, der nun wieder grün ist:
+
+![Build wieder erfolgreich](docs/ATL 2 Bilder/Cloud-Build-Korrekte-Version.png)
+
+## Herausforderungen während der Entwicklung
+
+### Postgres in der Cloud vs. lokale Entwicklung
+
+Im Rahmen einer separaten Übung habe ich mein Projekt lokal auf PostgreSQL via **Docker Compose** umgestellt
+(`docker-compose.yaml` mit `db`- und `pgadmin`-Service). Diese Änderung wurde zunächst versehentlich auch in
+den `main`-Branch gepusht, der von der Cloud Build Pipeline verwendet wird.
+
+Das führte zu zwei aufeinanderfolgenden Fehlern:
+
+1. **Tests schlugen fehl:** `conftest.py` versuchte sich mit einer Postgres-Datenbank auf `localhost:5432` zu
+   verbinden. Der "Run Tests"-Schritt in Cloud Build ist aber ein einfacher `python:3.12`-Container ohne
+   laufenden Datenbankserver — die Verbindung schlug mit `Connection refused` fehl.
+
+![Cloud Build Fehler-Übersicht: alle Tests scheitern](docs/ATL 2 Bilder/Fehler-Postgres.png)
+![Detaillierter Fehler: psycopg2 Connection refused](docs/ATL 2 Bilder/Fehler-Postgres-2.png)
+
+2. **Nachdem die Tests korrigiert waren, schlug das Deployment fehl:** `app/database.py` hatte dieselbe
+   Umstellung erhalten. Beim App-Start versuchte `create_db_and_tables()` sich ebenfalls mit Postgres zu
+   verbinden, die App stürzte deshalb sofort ab (`Container called exit(3)`), bevor sie überhaupt anfangen
+   konnte, auf dem erwarteten Port zu lauschen. Cloud Run meldete: *"The user-provided container failed to
+   start and listen on the port..."*
+
+### Überlegung Postgres-Lösung in der Cloud
+
+Ich habe mich gefragt, ob ich statt SQLite auch
+in der Cloud durchgehend Postgres nutzen könnte. Dabei bin ich auf ein technisches und finanzielles Problem
+gestossen: Cloud Run selbst kann keinen Datenbankserver "mitlaufen lassen", es deployt ausschliesslich einzelne,
+zustandslose Container. Eine dauerhaft erreichbare Postgres-Instanz in der Google Cloud wäre nur über Cloud SQL
+möglich, einen separaten, verwalteten Datenbank-Service. Cloud SQL läuft aber rund um die Uhr und verursacht
+laufende Kosten (auch bei der kleinsten Konfiguration mehrere Franken pro Monat) — im Gegensatz zu Cloud Run,
+das bei fehlender Nutzung auf 0 Instanzen herunterskaliert und dann nichts kostet. Da ich kein Google-Cloud-
+Startguthaben mehr zur Verfügung hatte, hätte das mein eingerichtetes Budget (CHF 5.-) direkt überschritten.
+
+**Lösung:** Ich habe die Datenbank-Verbindung in `database.py` und `conftest.py` so umgebaut, dass sie über eine
+Umgebungsvariable gesteuert wird, mit Postgres als Standardwert (Fallback):
+
+```python
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://kalorientracker:kalorientracker@localhost:5432/kalorientracker"
+)
+```
+
+- **Lokal auf meinem Rechner:** Die Variable ist nicht gesetzt, daher greift der Postgres-Fallback, die App
+  verbindet sich mit meiner lokalen Docker-Compose-Postgres-Datenbank.
+
+- **In Cloud Build und Cloud Run:** Die Variable wird in `cloudbuild.yaml` explizit auf SQLite gesetzt
+  (`--set-env-vars=DATABASE_URL=sqlite:///kalorien_tracker.db` beim Deployment, bzw.
+  `export TEST_DATABASE_URL="sqlite:///database_test.db"` vor den Tests) und überschreibt damit den Fallback.
+
+So läuft dieselbe Codebasis lokal mit Postgres (erfüllt die separate Docker-Übung) und in der Cloud kostenlos
+mit SQLite (erfüllt ATL 2), ohne dass eine kostenpflichtige Cloud-SQL-Instanz nötig ist. Eine Lösung, bei der
+dieselbe Postgres-Instanz für beide Umgebungen genutzt wird, ohne laufende Kosten zu verursachen, konnte ich
+nicht finden, das wäre ein möglicher nächster Schritt (z.B. mit einem befristeten Google-Cloud-Testguthaben).
+
+Die genaue Umsetzung ist in [`app/database.py`](app/database.py), [`app/tests/conftest.py`](app/tests/conftest.py)
+und [`cloudbuild.yaml`](cloudbuild.yaml) nachvollziehbar. Die lokale Postgres-Umgebung selbst ist in
+[`docker-compose.yaml`](docker-compose.yaml) definiert (Postgres- und PgAdmin-Service).
+
+Diese Situation hat mir gezeigt, wie wichtig es ist, Umgebungsvariablen mit sinnvollen Fallback-Werten sauber
+von der eigentlichen Produktionskonfiguration zu trennen, und wie aufschlussreich Cloud Build/Cloud Run Logs
+beim Debugging von Deployment-Problemen sind.
+
+## Fazit
+
+Mit der ATL 2 ist der Kalorien-Tracker vom reinen Lokal-Projekt zu einer Anwendung geworden, die automatisch
+getestet, gebaut und in die Cloud deployed wird, bei jedem Push, ohne manuellen Eingriff. Es hat mir gezeigt,
+wie eine App-Entwicklung im tatsächlichen Alltag erstellt wird und wie diese auch konstant automatisiert werden
+kann für das Deployment.
+Am meisten mitgenommen habe ich aus den Punkten, die nicht exakt nach Anleitung liefen: das Debugging der Postgres/
+SQLite-Problematik hat mir gezeigt, wie wichtig saubere Trennung von Umgebungen (lokal vs. Cloud) ist, und
+die Auseinandersetzung mit den Kosten von Cloud SQL hat mir ein besseres Gefühl dafür gegeben, wie schnell
+in der Cloud laufende Kosten entstehen können, wenn man nicht bewusst auf serverlose, skalierbare Dienste
+wie Cloud Run setzt. Insgesamt war ATL 2 eine gute praktische Ergänzung zu ATL 1 und ich konnte zum Thema
+Deployment sowie Docker einiges Mitnehmen für meinen zukünftigen Werdegang.
