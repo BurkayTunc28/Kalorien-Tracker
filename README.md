@@ -348,6 +348,7 @@ Konkret ging es darum:
 - Bei erfolgreichen Tests: Docker-Image bauen und in die Artifact Registry hochladen
 - Das Image als Cloud Run Service deployen
 - Nachweisen, dass die Pipeline bei einem fehlschlagenden Test korrekt abbricht
+- Nachweisen, dass die Pipeline korrekt funktioniert bis zum Deploy
 
 Die Einrichtung von Cloud Build, Artifact Registry und Cloud Run wurde gemeinsam mit dem Dozenten im Unterricht
 anhand einer Live-Demonstration erarbeitet, basierend auf den bereitgestellten Aufgabenblättern (Woche 16/17).
@@ -368,7 +369,7 @@ von CHF 5.- eingerichtet:
 
 Damit die App überhaupt automatisch getestet und deployed werden kann, musste Cloud Build zuerst wissen, wo sich
 mein Code befindet und wann es aktiv werden soll. Das Ergebnis ist eine Pipeline, die komplett ohne manuelles
-Zutun bei jedem Push abläuft, vom Testen bis zum fertigen, live erreichbaren Service.
+Eingreifen bei jedem Push abläuft, vom Testen bis zum fertigen, live erreichbaren Service.
 
 ### GitHub-Verknüpfung
 
@@ -407,16 +408,16 @@ den Ordner `app/tests/` nach allen Dateien und Funktionen, die mit `test_` begin
 Test, den ich hinzufüge, wird beim nächsten Push automatisch mitgetestet, ohne dass ich die Pipeline anpassen muss.
 
 Da die Schritte sequenziell voneinander abhängen, genügt ein einziger fehlgeschlagener Test, damit Cloud Build die gesamte Pipeline abbricht.
-Build, Push und Deploy werden dann gar nicht erst ausgeführt.
+Build, Push und Deploy werden dann gar nicht erst ausgeführt. Das wird auch getestet und mit Bildern nachgewiesen.
 
-Die vollständige Konfiguration ist in [`cloudbuild.yaml`](cloudbuild.yaml) im Repository-Root einsehbar.
+Die vollständige Konfiguration ist in cloudbuild.yaml im Repository-Root einsehbar, wo auch alles mit genaueren Kommentaren ausgestattet wurde.
 
 ### Dockerfile
 
 Damit der "Build Container Image"-Schritt ein möglichst schlankes und produktionstaugliches Image erzeugt,
 verwendet das Dockerfile einen Multi-Stage-Build:
 
-\```dockerfile
+```dockerfile
 FROM python:3.12-alpine AS builder
 WORKDIR /app
 RUN pip install uv
@@ -435,7 +436,7 @@ COPY ./app ./
 EXPOSE 8100
 ENTRYPOINT ["fastapi", "run", "main.py"]
 CMD ["--port", "8100"]
-\```
+```
 
 In der ersten Stage (`builder`) wird `uv` nur genutzt, um aus `pyproject.toml`/`uv.lock` eine
 `requirements.txt` mit den reinen Produktions-Abhängigkeiten zu erzeugen (`--no-dev` schliesst
@@ -545,12 +546,12 @@ Startguthaben mehr zur Verfügung hatte, hätte das mein eingerichtetes Budget (
 **Lösung:** Ich habe die Datenbank-Verbindung in `database.py` und `conftest.py` so umgebaut, dass sie über eine
 Umgebungsvariable gesteuert wird, mit Postgres als Standardwert (Fallback):
 
-\```python
+```python
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://kalorientracker:kalorientracker@localhost:5432/kalorientracker"
 )
-\```
+```
 
 - **Lokal auf meinem Rechner:** Die Variable ist nicht gesetzt, daher greift der Postgres-Fallback, die App
   verbindet sich mit meiner lokalen Docker-Compose-Postgres-Datenbank.
@@ -575,9 +576,14 @@ beim Debugging von Deployment-Problemen sind.
 ## Fazit
 
 Mit ATL 2 ist der Kalorien-Tracker vom reinen Lokal-Projekt zu einer Anwendung geworden, die automatisch
-getestet, gebaut und in die Cloud deployed wird, bei jedem Push, ohne manuellen Eingriff. Einen wichtigen
-Schritt den ich noch mitnehmen konnte war das Debugging der Postgres/SQLite-Problematik hat mir gezeigt,
-wie wichtig saubere Trennung von Umgebungen (lokal vs. Cloud) ist, und die Auseinandersetzung mit den Kosten
-von Cloud SQL hat mir ein besseres Gefühl dafür gegeben, wie schnell in der Cloud laufende Kosten entstehen können,
-wenn man nicht bewusst auf serverlose, skalierbare Dienste wie Cloud Run setzt.
-Insgesamt war ATL 2 eine gute praktische Ergänzung zu ATL 1.
+getestet, gebaut und in die Cloud deployed wird, bei jedem Push, ohne manuellen Eingriff. Es hat mir gezeigt, wie
+so ein automatisierter Ablauf in einer realen Umgebung ungefähr aussehen würde, und es hatte einen deutlichen Lerneffekt für mich,
+nicht nur für das Studium oder für die Arbeit, sondern auch für meine zukünftigen privaten Projekte.
+
+Ein wichtiger Punkt, den ich mitnehmen konnte: Das Debugging der Postgres/SQLite-Problematik hat mir gezeigt, wie wichtig eine
+saubere Trennung von Umgebungen (lokal vs. Cloud) ist, und die Auseinandersetzung mit den Kosten von Cloud SQL hat mir ein
+besseres Gefühl dafür gegeben, wie schnell in der Cloud laufende Kosten entstehen können, wenn man Cloud Run nicht mit
+Vorsicht aufsetzt.
+
+Insgesamt war ATL 2 eine gute praktische Ergänzung zu ATL 1, in der ich viele Aspekte kennenlernen durfte für meinen
+Werdegang als Softwareentwickler.
